@@ -126,14 +126,41 @@ def _normalize_cols(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# def _find_header_row(excel_path: Path, required_keywords: list[str], max_scan_rows: int = 25) -> int:
+#     preview = pd.read_excel(excel_path, header=None, nrows=max_scan_rows)
+#     best_row, best_score = 0, -1
+#     for r in range(len(preview)):
+#         row_vals = preview.iloc[r].astype(str).str.lower().str.strip().tolist()
+#         score = sum(any(kw in v for v in row_vals) for kw in required_keywords)
+#         if score > best_score:
+#             best_row, best_score = r, score
+#     return best_row
+
 def _find_header_row(excel_path: Path, required_keywords: list[str], max_scan_rows: int = 25) -> int:
     preview = pd.read_excel(excel_path, header=None, nrows=max_scan_rows)
+
+    required_keywords = [
+        str(kw).lower().strip()
+        for kw in required_keywords
+        if pd.notna(kw)
+    ]
+
     best_row, best_score = 0, -1
+
     for r in range(len(preview)):
-        row_vals = preview.iloc[r].astype(str).str.lower().str.strip().tolist()
-        score = sum(any(kw in v for v in row_vals) for kw in required_keywords)
+        row_vals = []
+        for v in preview.iloc[r].tolist():
+            if pd.notna(v):
+                row_vals.append(str(v).lower().strip())
+
+        score = sum(
+            any(kw in cell for cell in row_vals)
+            for kw in required_keywords
+        )
+
         if score > best_score:
             best_row, best_score = r, score
+
     return best_row
 
 
